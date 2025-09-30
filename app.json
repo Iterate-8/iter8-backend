@@ -1,0 +1,65 @@
+{
+  "name": "iter8-backend",
+  "description": "FastAPI GraphQL Backend with Supabase Integration",
+  "image": "heroku/python",
+  "stack": "heroku-22",
+  "keywords": ["python", "fastapi", "graphql", "supabase"],
+  "env": {
+    "DATABASE_URL": {
+      "description": "PostgreSQL database URL (Supabase connection string)",
+      "required": true
+    },
+    "SUPABASE_URL": {
+      "description": "Your Supabase project URL",
+      "required": true
+    },
+    "SUPABASE_ANON_KEY": {
+      "description": "Your Supabase anonymous key",
+      "required": true
+    },
+    "SUPABASE_SERVICE_ROLE_KEY": {
+      "description": "Your Supabase service role key",
+      "required": true
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for JWT token generation",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Debug mode for development",
+      "value": "False"
+    },
+    "ENVIRONMENT": {
+      "description": "Application environment",
+      "value": "production"
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "value": "INFO"
+    },
+    "CORS_ORIGINS": {
+      "description": "Comma-separated list of allowed CORS origins",
+      "value": "*"
+    },
+    "ALGORITHM": {
+      "description": "JWT algorithm",
+      "value": "HS256"
+    },
+    "ACCESS_TOKEN_EXPIRE_MINUTES": {
+      "description": "JWT token expiration time in minutes",
+      "value": "30"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

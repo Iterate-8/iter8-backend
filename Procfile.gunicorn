@@ -1,0 +1,6 @@
+# Alternative Procfile using gunicorn for better production performance
+# To use this instead of the default Procfile:
+# 1. Rename this file to "Procfile"
+# 2. Rename the current "Procfile" to "Procfile.uvicorn"
+
+web: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
