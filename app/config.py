@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     host: str = Field("0.0.0.0", env="HOST")
     port: int = Field(8000, env="PORT")
     
-    # Security
-    secret_key: str = Field(..., env="SECRET_KEY")
+    # Security (for future authentication implementation)
+    secret_key: Optional[str] = Field(None, env="SECRET_KEY")
     algorithm: str = Field("HS256", env="ALGORITHM")
     access_token_expire_minutes: int = Field(30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     
