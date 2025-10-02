@@ -91,5 +91,5 @@ async def http_exception_handler(request, exc):
     )
 
 
-# Vercel handler - wraps FastAPI with Mangum for AWS Lambda compatibility
-handler = Mangum(app, lifespan="off")
+# Export the app directly for Vercel
+# Vercel's Python runtime will handle ASGI apps automatically
