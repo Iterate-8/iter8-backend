@@ -36,6 +36,7 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     connection = None
     try:
         # Connect with individual parameters to avoid asyncpg URL parsing issues
+        # Note: SSL is handled automatically by asyncpg for pooler connections
         connection = await asyncpg.connect(
             host=host,
             port=int(port),
@@ -43,10 +44,7 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
             password=password,
             database=database,
             timeout=30,
-            command_timeout=30,
-            server_settings={
-                'application_name': 'vercel_serverless'
-            }
+            command_timeout=30
         )
         logger.debug(f"Database connection established to {host}:{port}")
         yield connection
