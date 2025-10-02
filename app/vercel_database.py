@@ -33,19 +33,21 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     # Create direct connection (no pooling for serverless)
     connection = None
     try:
+        # Use the full connection string for better compatibility
         connection = await asyncpg.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
+            dsn=settings.database_url,
             ssl='require',
-            command_timeout=30,  # Shorter timeout for serverless
+            timeout=30,
+            command_timeout=30,
+            server_settings={
+                'application_name': 'vercel_serverless'
+            }
         )
         logger.debug("Database connection established")
         yield connection
     except Exception as e:
         logger.error(f"Database connection error: {e}")
+        logger.error(f"Connection attempted to: {host}:{port}")
         raise
     finally:
         if connection:
