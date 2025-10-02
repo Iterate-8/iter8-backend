@@ -58,12 +58,26 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    import os
     return {
         "status": "healthy",
         "message": "FastAPI GraphQL Backend is running on Vercel",
         "environment": settings.environment,
         "debug": settings.debug,
-        "platform": "Vercel Serverless"
+        "platform": "Vercel Serverless",
+        "database_url_set": "DATABASE_URL" in os.environ,
+        "database_url_length": len(os.environ.get("DATABASE_URL", ""))
+    }
+
+@app.get("/env-check")
+async def env_check():
+    """Check environment variables (for debugging)."""
+    import os
+    return {
+        "DATABASE_URL_set": "DATABASE_URL" in os.environ,
+        "SUPABASE_URL_set": "SUPABASE_URL" in os.environ,
+        "SUPABASE_ANON_KEY_set": "SUPABASE_ANON_KEY" in os.environ,
+        "SUPABASE_SERVICE_ROLE_KEY_set": "SUPABASE_SERVICE_ROLE_KEY" in os.environ
     }
 
 
