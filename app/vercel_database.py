@@ -20,23 +20,39 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     Yields:
         asyncpg.Connection: Database connection
     """
+    # Parse connection URL manually to avoid asyncpg's regex issues with pooler format
+    import re
+    
+    # Match postgresql://user:pass@host:port/database
+    pattern = r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
+    match = re.match(pattern, settings.database_url)
+    
+    if not match:
+        raise ValueError(f"Invalid DATABASE_URL format")
+    
+    user, password, host, port, database = match.groups()
+    
     # Create direct connection (no pooling for serverless)
     connection = None
     try:
-        # Use DSN directly - let asyncpg handle the parsing
-        # This works better with Supabase pooler usernames like postgres.projectref
+        # Connect with individual parameters to avoid asyncpg URL parsing issues
         connection = await asyncpg.connect(
-            dsn=settings.database_url,
+            host=host,
+            port=int(port),
+            user=user,
+            password=password,
+            database=database,
             timeout=30,
             command_timeout=30,
             server_settings={
                 'application_name': 'vercel_serverless'
             }
         )
-        logger.debug("Database connection established")
+        logger.debug(f"Database connection established to {host}:{port}")
         yield connection
     except Exception as e:
         logger.error(f"Database connection error: {e}")
+        logger.error(f"Attempted connection to {host}:{port} as {user}")
         raise
     finally:
         if connection:
