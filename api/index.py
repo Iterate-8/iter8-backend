@@ -1,15 +1,50 @@
 """
-Vercel serverless entry point for the FastAPI application.
+Vercel serverless entry point - simplified for serverless compatibility.
 """
 
-import sys
-from pathlib import Path
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from strawberry.fastapi import GraphQLRouter
+import os
 
-# Add parent directory to Python path so we can import app
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Import configuration and schema
+from app.config import settings
+from app.graphql.schema import schema
 
-# Import the Vercel-optimized FastAPI app
-from app.vercel_main import handler
+# Create FastAPI app without lifespan events for serverless
+app = FastAPI(
+    title="Iter8 Backend - GraphQL API (Vercel)",
+    description="FastAPI GraphQL Backend with Supabase Integration",
+    version="1.0.0",
+)
 
-# Export for Vercel
-app = handler
+# Add CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# GraphQL router
+graphql_app = GraphQLRouter(schema, graphiql=True, path="/")
+app.include_router(graphql_app, prefix="/graphql")
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Iter8 Backend - GraphQL API (Vercel)",
+        "version": "1.0.0",
+        "graphql": "/graphql",
+        "health": "/health",
+        "platform": "Vercel Serverless"
+    }
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "healthy",
+        "platform": "Vercel",
+        "environment": os.environ.get("ENVIRONMENT", "production")
+    }
