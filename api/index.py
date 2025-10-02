@@ -9,9 +9,9 @@ from strawberry.fastapi import GraphQLRouter
 from mangum import Mangum
 import os
 
-# Import configuration and schema
+# Import configuration and Vercel-optimized schema
 from app.config import settings
-from app.graphql.schema import schema
+from app.graphql.vercel_schema import schema
 
 # Create FastAPI app (no lifespan for serverless)
 app = FastAPI(
