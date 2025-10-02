@@ -110,6 +110,14 @@ ENV/
 env.bak/
 venv.bak/
 
+# Environment and configuration files with sensitive data
+env.example
+env_template.txt
+*.env.local
+*.env.production
+*.env.development
+*.env.staging
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -155,4 +163,12 @@ tmp/
 .dockerignore
 
 # Local development
-local_settings.py 
+local_settings.py
+
+# Deployment guides and configuration files with sensitive data
+HEROKU_DEPLOYMENT_GUIDE.md
+VERCEL_DEPLOYMENT_GUIDE.md
+
+# Verification and setup scripts that may contain credentials
+verify_supabase_details.py
+find_supabase_hostname.py 
