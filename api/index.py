@@ -1,11 +1,11 @@
 """
-Vercel serverless entry point using Mangum for ASGI support.
+Vercel serverless entry point.
 """
 
 from fastapi import FastAPI
 from mangum import Mangum
 
-# Create simple FastAPI app
+# Create FastAPI app
 app = FastAPI(title="Iter8 Backend")
 
 @app.get("/")
@@ -16,5 +16,5 @@ def root():
 def health():
     return {"status": "healthy", "platform": "Vercel"}
 
-# Wrap with Mangum for AWS Lambda/Vercel compatibility
-handler = Mangum(app)
+# Vercel handler - wraps FastAPI with Mangum
+handler = Mangum(app, lifespan="off")
