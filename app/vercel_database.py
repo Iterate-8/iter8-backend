@@ -50,10 +50,9 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
         else:
             port = 5432
 
-    # Optional: override Supabase pooler region
-    # Default to us-east-2 (per deployment preference) unless explicitly overridden
-    region_override = os.getenv("SUPABASE_POOLER_REGION", "us-east-2")
-    if host.endswith(".pooler.supabase.com"):
+    # Optional: override Supabase pooler region only if explicitly set via env
+    region_override = os.getenv("SUPABASE_POOLER_REGION")
+    if region_override and host.endswith(".pooler.supabase.com"):
         first_label = host.split(".", 1)[0]  # e.g. aws-0-us-east-2
         parts = first_label.split("-")
         if len(parts) >= 3:
