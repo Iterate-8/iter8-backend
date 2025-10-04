@@ -6,6 +6,7 @@ Uses connection per request instead of connection pooling.
 import logging
 import asyncpg
 from typing import AsyncGenerator
+from urllib.parse import urlparse, unquote
 from app.config import settings
 
 # Configure logging
@@ -20,23 +21,37 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     Yields:
         asyncpg.Connection: Database connection
     """
-    # Parse connection URL manually to avoid asyncpg's regex issues with pooler format
-    import re
-    
-    # Match postgresql://user:pass@host:port/database
-    pattern = r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
-    match = re.match(pattern, settings.database_url)
-    
-    if not match:
-        raise ValueError(f"Invalid DATABASE_URL format")
-    
-    user, password, host, port, database = match.groups()
+    if not settings.database_url:
+        raise ValueError("DATABASE_URL is not set. Please configure it in Vercel Project Settings → Environment Variables.")
+
+    # Parse connection URL robustly
+    parsed = urlparse(settings.database_url)
+
+    # Support schemes like postgresql+asyncpg
+    scheme = (parsed.scheme or "postgresql").split("+")[0]
+    if scheme not in {"postgres", "postgresql"}:
+        logger.warning(f"Unexpected database scheme '{parsed.scheme}', proceeding as PostgreSQL")
+
+    user = parsed.username or "postgres"
+    password = unquote(parsed.password) if parsed.password else ""
+    host = parsed.hostname
+    port = parsed.port
+    database = (parsed.path or "/postgres").lstrip("/")
+
+    if not host:
+        raise ValueError("DATABASE_URL is missing hostname")
+
+    # Default ports: pooler usually 6543, direct 5432
+    if port is None:
+        if host.endswith("pooler.supabase.com"):
+            port = 6543
+        else:
+            port = 5432
     
     # Create direct connection (no pooling for serverless)
     connection = None
     try:
-        # Connect with individual parameters to avoid asyncpg URL parsing issues
-        # Note: SSL is handled automatically by asyncpg for pooler connections
+        # Connect with explicit parameters. Enforce SSL for Supabase.
         connection = await asyncpg.connect(
             host=host,
             port=int(port),
@@ -44,7 +59,8 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
             password=password,
             database=database,
             timeout=30,
-            command_timeout=30
+            command_timeout=30,
+            ssl=True
         )
         logger.debug(f"Database connection established to {host}:{port}")
         yield connection

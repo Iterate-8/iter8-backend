@@ -12,12 +12,13 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database Configuration
-    database_url: str = Field(..., env="DATABASE_URL")
+    # Optional at load time; we populate from fallbacks if missing.
+    database_url: Optional[str] = Field(None, env="DATABASE_URL")
     
-    # Supabase Configuration
-    supabase_url: str = Field(..., env="SUPABASE_URL")
-    supabase_anon_key: str = Field(..., env="SUPABASE_ANON_KEY")
-    supabase_service_role_key: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
+    # Supabase Configuration (optional; not all deployments need API keys)
+    supabase_url: Optional[str] = Field(None, env="SUPABASE_URL")
+    supabase_anon_key: Optional[str] = Field(None, env="SUPABASE_ANON_KEY")
+    supabase_service_role_key: Optional[str] = Field(None, env="SUPABASE_SERVICE_ROLE_KEY")
     
     # Application Configuration
     debug: bool = Field(False, env="DEBUG")
@@ -47,6 +48,23 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+# Populate database_url from common Supabase/Vercel fallbacks if missing
+if not settings.database_url:
+    fallback_env_vars = [
+        # Common alternates seen in Supabase/Vercel setups
+        "SUPABASE_DB_URL",
+        "SUPABASE_DATABASE_URL",
+        "POSTGRES_URL",
+        "POSTGRES_PRISMA_URL",
+        "PG_DATABASE_URL",
+        "DB_URL",
+    ]
+    for var_name in fallback_env_vars:
+        env_val = os.getenv(var_name)
+        if env_val:
+            settings.database_url = env_val
+            break
 
 
 def get_settings() -> Settings:
