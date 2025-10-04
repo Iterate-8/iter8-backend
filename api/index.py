@@ -12,6 +12,7 @@ import os
 # Import configuration and Vercel-optimized schema
 from app.config import settings
 from app.graphql.vercel_schema import schema
+from app.vercel_database import get_db
 
 # Create FastAPI app (no lifespan for serverless)
 app = FastAPI(
@@ -75,6 +76,31 @@ async def env_check():
         "SUPABASE_ANON_KEY_set": "SUPABASE_ANON_KEY" in os.environ,
         "SUPABASE_SERVICE_ROLE_KEY_set": "SUPABASE_SERVICE_ROLE_KEY" in os.environ
     }
+
+
+@app.get("/db-check")
+async def db_check():
+    """Attempt a live DB connection and return basic info."""
+    try:
+        async for conn in get_db():
+            ping = await conn.fetchval("select 1")
+            server_version = await conn.fetchval("show server_version")
+            current_user = await conn.fetchval("select current_user")
+            server_addr = await conn.fetchval("select inet_server_addr()::text")
+            server_port = await conn.fetchval("select inet_server_port()")
+            return {
+                "success": True,
+                "ping": ping,
+                "server_version": server_version,
+                "current_user": current_user,
+                "server_addr": server_addr,
+                "server_port": server_port,
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 
 @app.exception_handler(Exception)

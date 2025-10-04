@@ -8,6 +8,7 @@ import asyncpg
 from typing import AsyncGenerator
 from urllib.parse import urlparse, unquote
 from app.config import settings
+import ssl
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -52,6 +53,11 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     connection = None
     try:
         # Connect with explicit parameters. Enforce SSL for Supabase.
+        # Use a non-verifying SSL context to avoid certificate chain issues
+        # in serverless environments while still requiring TLS.
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
         connection = await asyncpg.connect(
             host=host,
             port=int(port),
@@ -60,7 +66,7 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
             database=database,
             timeout=30,
             command_timeout=30,
-            ssl=True
+            ssl=ssl_context
         )
         logger.debug(f"Database connection established to {host}:{port}")
         yield connection
