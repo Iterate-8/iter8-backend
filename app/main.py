@@ -3,6 +3,7 @@ Main FastAPI application with GraphQL integration.
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +13,15 @@ import uvicorn
 
 from app.config import settings
 from app.database import init_db, close_db
-from app.graphql.schema import schema
+
+# Detect Vercel serverless environment
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_URL") or os.getenv("VERCEL_ENV"))
+
+# Choose schema based on environment: Vercel uses serverless-optimized schema
+if IS_VERCEL:
+    from app.graphql.vercel_schema import schema  # type: ignore
+else:
+    from app.graphql.schema import schema  # type: ignore
 
 # Configure logging
 logging.basicConfig(
@@ -56,7 +65,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
-    lifespan=lifespan
+    lifespan=None if IS_VERCEL else lifespan
 )
 
 # Add CORS middleware
@@ -89,7 +98,8 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs" if settings.debug else "Not available in production",
         "graphql": "/graphql",
-        "health": "/health"
+        "health": "/health",
+        "platform": "Vercel Serverless" if IS_VERCEL else "Standard ASGI"
     }
 
 
@@ -102,7 +112,8 @@ async def health_check():
         "status": "healthy",
         "message": "FastAPI GraphQL Backend is running",
         "environment": settings.environment,
-        "debug": settings.debug
+        "debug": settings.debug,
+        "platform": "Vercel Serverless" if IS_VERCEL else "Standard ASGI"
     }
 
 
