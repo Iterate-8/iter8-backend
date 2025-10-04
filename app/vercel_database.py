@@ -51,20 +51,18 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
             port = 5432
 
     # Optional: override Supabase pooler region
-    # If Vercel env SUPABASE_POOLER_REGION is set, rewrite region in host
-    # Also, if host explicitly uses us-east-2, default-switch to us-east-1 as requested
-    region_override = os.getenv("SUPABASE_POOLER_REGION")
-    if not region_override and host.endswith("us-east-2.pooler.supabase.com"):
-        region_override = "us-east-1"
-    if region_override and host.endswith(".pooler.supabase.com"):
+    # Default to us-east-2 (per deployment preference) unless explicitly overridden
+    region_override = os.getenv("SUPABASE_POOLER_REGION", "us-east-2")
+    if host.endswith(".pooler.supabase.com"):
         first_label = host.split(".", 1)[0]  # e.g. aws-0-us-east-2
         parts = first_label.split("-")
         if len(parts) >= 3:
             prefix = "-".join(parts[:2])  # e.g. aws-0
-            new_first_label = f"{prefix}-{region_override}"
-            new_host = host.replace(first_label, new_first_label, 1)
-            logger.warning(f"Overriding Supabase pooler region to {region_override}; host set to {new_host}")
-            host = new_host
+            desired_first_label = f"{prefix}-{region_override}"
+            if first_label != desired_first_label:
+                new_host = host.replace(first_label, desired_first_label, 1)
+                logger.warning(f"Overriding Supabase pooler region to {region_override}; host set to {new_host}")
+                host = new_host
     
     # Create direct connection (no pooling for serverless)
     connection = None
